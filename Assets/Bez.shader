@@ -52,10 +52,10 @@
             uniform StructuredBuffer<float4> _Buffer;
             uniform StructuredBuffer<int> _Counts;
 
-            fixed4 frag (v2f inp) : SV_Target
+            float4 frag (v2f inp) : SV_Target
             {
                 float2 wob = tex2D(_Wobbler,inp.uv);
-                inp.uv+=wob*0.002;
+                inp.uv+=wob*0.001;
                 fixed4 col = fixed4(0,0,0,1);
                 int2 tile = (int2)(inp.uv*float2(_Xtiles,_Ytiles));
 
@@ -72,7 +72,7 @@
                     float4 ln = _Buffer[ln_id]-float4(off,off);
                     float x = get_line(ln.xy,float2(0,0),ln.zw);
                     mindist = min(x,mindist);
-                    c+=(1-saturate(clamp(x-0.003,0,0.003)/0.003))*0.3;
+                    c+=(1-saturate(clamp(x-0.00,0,0.01)/0.01));
                     
                 }
                 //c = 1-saturate(clamp(mindist-0.002,0,0.003)/0.003);

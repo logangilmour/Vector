@@ -1,7 +1,8 @@
-﻿Shader "Hidden/Wobble"
+﻿Shader "Hidden/KawaseDown"
 {
     Properties
     {
+        _MainTex ("Texture", 2D) = "white" {}
     }
     SubShader
     {
@@ -15,7 +16,6 @@
             #pragma fragment frag
 
             #include "UnityCG.cginc"
-            #include "Assets/Simplex.cginc"
 
             struct appdata
             {
@@ -37,11 +37,20 @@
                 return o;
             }
 
-            uniform float _Wob;
+            sampler2D _MainTex;
+            uniform float4 _MainTex_TexelSize;
 
-            float2 frag (v2f i) : SV_Target
+            float4 frag (v2f i) : SV_Target
             {
-                return float2(snoise(float3(i.uv*10,_Wob*10)),snoise(float3(i.uv*10,_Wob*10+27.5)));
+                float2 hp = _MainTex_TexelSize*0.5;
+                float4 sum = tex2D(_MainTex,i.uv)*4.0;
+                sum += tex2D(_MainTex, i.uv - hp);
+                sum += tex2D(_MainTex, i.uv + hp);
+                sum += tex2D(_MainTex, i.uv + float2(hp.x, -hp.y));
+                sum += tex2D(_MainTex, i.uv - float2(hp.x, -hp.y));
+                    
+                return sum/8;
+           
             }
             ENDCG
         }
