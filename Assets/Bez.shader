@@ -48,7 +48,8 @@
             int _Xtiles;
             int _Ytiles;
             
-            uniform StructuredBuffer<float4> _Tiles;
+            uniform StructuredBuffer<int> _Tiles;
+            uniform StructuredBuffer<float4> _Buffer;
             uniform StructuredBuffer<int> _Counts;
 
             fixed4 frag (v2f inp) : SV_Target
@@ -66,7 +67,8 @@
                 int count = _Counts[tile.x+tile.y*_Xtiles];
                 float mindist = 1000;
                 for(int i=0; i<count; i++){
-                    float4 ln = _Tiles[tile.x+tile.y*_Xtiles+i*(_Xtiles*_Ytiles)]-float4(off,off);
+                    int ln_id = _Tiles[tile.x+tile.y*_Xtiles+i*(_Xtiles*_Ytiles)];
+                    float4 ln = _Buffer[ln_id]-float4(off,off);
                     mindist = min(get_line(ln.xy,float2(0,0),ln.zw),mindist);
                     
                     

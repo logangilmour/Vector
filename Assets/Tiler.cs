@@ -8,10 +8,12 @@ public class Tiler : MonoBehaviour
     ComputeBuffer[] tiles = new ComputeBuffer[2];
     ComputeBuffer[] counts = new ComputeBuffer[2];
     ComputeBuffer buffer;
+    ComputeBuffer index;
     Vector4[] data;
     int[] tileSize = {128,16 };
     int numLines = 10000;
     int[] tileLines = { 10000, 1000 };
+    int[] kernels = new int[2];
     
 
     // Start is called before the first frame update
@@ -19,9 +21,10 @@ public class Tiler : MonoBehaviour
     {
         for(int i=0; i<2; i++)
         {
-            tiles[i] = new ComputeBuffer((Screen.width / tileSize[i]) * (Screen.height / tileSize[i]) * tileLines[i], 4 * 4);
+            tiles[i] = new ComputeBuffer((Screen.width / tileSize[i]) * (Screen.height / tileSize[i]) * tileLines[i], 4);
             counts[i] = new ComputeBuffer((Screen.width / tileSize[i]) * (Screen.height / tileSize[i]), 4);
         }
+
         mat = new Material(Shader.Find("Hidden/Bez"));
     }
 
@@ -46,22 +49,33 @@ public class Tiler : MonoBehaviour
             }
             buffer = new ComputeBuffer(data.Length, 4 * 4);
             buffer.SetData(data);
+
+            int[] indexList = new int[numLines];
+            for (int i = 0; i < numLines; i++)
+            {
+                indexList[i] = i;
+            }
+            index = new ComputeBuffer(numLines, 4);
+            index.SetData(indexList);
+            kernels[0] = shader.FindKernel("Run8");
+            kernels[1] = shader.FindKernel("Run16");
         }
         
         ComputeBuffer filterCounts = new ComputeBuffer(1, 4);
         int[] fdat = { numLines };
         filterCounts.SetData(fdat);
 
-        ComputeBuffer lines = buffer;
+        ComputeBuffer lines = index;
         int filterTilesX = 1;
         int filterTilesY = 1;
         for (int i =0; i<2; i++)
         {
 
 
-            int kernel = 0;
+            int kernel = kernels[i];
             shader.SetBuffer(kernel, "filterCounts", filterCounts);
 
+            shader.SetBuffer(kernel, "buffer", buffer);
             shader.SetBuffer(kernel, "lines", lines);
             shader.SetBuffer(kernel, "counts", counts[i]);
 
@@ -73,7 +87,9 @@ public class Tiler : MonoBehaviour
 
             shader.SetInt("tileLines", tileLines[i]);
             shader.SetFloat("distCheck", Mathf.Sqrt(2) * tileSize[i] / Screen.width);
+            print(kernel);
             shader.SetBuffer(kernel, "tiles", tiles[i]);
+            
             uint x, y, z;
 
             shader.GetKernelThreadGroupSizes(kernel, out x, out y, out z);
@@ -99,6 +115,7 @@ public class Tiler : MonoBehaviour
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         Shader.SetGlobalBuffer("_Tiles", tiles[1]);
+        Shader.SetGlobalBuffer("_Buffer", buffer);
         Shader.SetGlobalInt("_TileLines", tileLines[1]);
         Shader.SetGlobalBuffer("_Counts", counts[1]);
         Shader.SetGlobalInt("_Xtiles", (Screen.width / tileSize[1]));

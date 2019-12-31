@@ -1,11 +1,13 @@
 ﻿// Each #kernel tells which function to compile; you can have many kernels
-#pragma kernel CSMain
+#pragma kernel Run16
+#pragma kernel Run8
 #include "Assets/Tests.cginc"
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
-RWStructuredBuffer<float4> tiles;
+RWStructuredBuffer<int> tiles;
 RWStructuredBuffer<int> counts;
-StructuredBuffer<float4> lines;
+StructuredBuffer<int> lines;
+StructuredBuffer<float4> buffer;
 StructuredBuffer<int> filterCounts;
 int xtiles;
 int ytiles;
@@ -14,11 +16,8 @@ int filterYtiles;
 int tileLines;
 float distCheck;
 
-
-[numthreads(16,16,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+void run(uint3 id)
 {
-    
     float2 pos = (id.xy+0.5)/float2(xtiles,ytiles)*2-1;
     int2 filterTile = id.xy / int2(xtiles/filterXtiles,ytiles/filterYtiles);
 
@@ -29,12 +28,12 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     int numLines = filterCounts[fidx];
     for(int i=0; i<numLines; i++)
     {
-        float4 l = lines[fidx+i*filterXtiles*filterYtiles];
+        int ln_id = lines[fidx+i*filterXtiles*filterYtiles];
 
-        float4 ln = l-float4(pos,pos);
+        float4 ln = buffer[ln_id]-float4(pos,pos);
         
 
-        tiles[idx+count*xtiles*ytiles]=l;
+        tiles[idx+count*xtiles*ytiles]=ln_id;
 
         count += get_line(ln.xy,float2(0,0),ln.zw)<(distCheck*2);
 
@@ -44,6 +43,22 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     }
     counts[idx]=count;
+}
+
+[numthreads(16,16,1)]
+void Run16 (uint3 id : SV_DispatchThreadID)
+{
+    
+    run(id);
+
+    
+}
+
+[numthreads(8,8,1)]
+void Run8 (uint3 id : SV_DispatchThreadID)
+{
+    
+    run(id);
 
     
 }
