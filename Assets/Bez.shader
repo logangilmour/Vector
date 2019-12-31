@@ -72,7 +72,7 @@
                     float4 ln = _Buffer[ln_id]-float4(off,off);
                     float x = get_line(ln.xy,float2(0,0),ln.zw);
                     mindist = min(x,mindist);
-                    c+=(1-saturate(clamp(x-0.00,0,0.01)/0.01));
+                    c+=(1-saturate(clamp(x-0.00,0,0.01)/0.01))*0.2;
                     
                 }
                 //c = 1-saturate(clamp(mindist-0.002,0,0.003)/0.003);

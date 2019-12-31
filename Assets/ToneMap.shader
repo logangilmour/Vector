@@ -46,22 +46,23 @@
                 float exposure = 10;
                 const float gamma = 2.2;
                 float3 bloom = tex2D(_Bloom, i.uv).rgb;
-                float3 hdrColor = tex2D(_MainTex, i.uv).rgb;
-                hdrColor+=bloom;
+                float3 col = tex2D(_MainTex, i.uv).rgb;
+
+                float3 hdrColor=col+bloom;
                 // Exposure tone mapping
                 //float3 mapped = float3(1,1,1) - exp(-hdrColor * exposure);
                 // Gamma correction 
                 //float correct = 1.0 / gamma;
                 //mapped = pow(mapped, float3(correct,correct,correct));
 
-                float L = float3(0.2126,0.7152,0.0722)*hdrColor*2;
+                float L = float3(0.2126,0.7152,0.0722)*hdrColor;
                 float x = max(0,L-0.004);
                 x = (x*(6.2*x+0.5))/(x*(6.2*x+1.7)+0.06);
 
                 float scale = x / L;
                 float3 mapped = hdrColor*scale;
 
-                float over = pow(dot(saturate(mapped-1),float3(1,1,1)),2.2);
+                float over = dot(saturate(mapped-1),float3(1,1,1));
 
                 mapped+=over;
 

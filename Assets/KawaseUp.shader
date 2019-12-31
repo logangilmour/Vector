@@ -38,6 +38,7 @@
             }
 
             sampler2D _MainTex;
+            sampler2D _CurTex;
             uniform float4 _MainTex_TexelSize;
 
             float4 frag (v2f i) : SV_Target
@@ -51,7 +52,7 @@
                 sum += tex2D(_MainTex, i.uv + float2(hp.x, -hp.y))*2.;
                 sum += tex2D(_MainTex, i.uv + float2(0.0,-hp.y*2.0));
                 sum += tex2D(_MainTex, i.uv - hp)*2.;
-                return sum/12.;
+                return sum/12 + tex2D(_CurTex,i.uv)/4;
             }
             ENDCG
         }

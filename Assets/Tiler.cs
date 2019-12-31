@@ -13,7 +13,7 @@ public class Tiler : MonoBehaviour
     Vector4[] data;
     int[] tileSize = {128,16 };
     int numLines = 1000;
-    int[] tileLines = { 1000, 100 };
+    int[] tileLines = { 500, 50 };
     int[] kernels = new int[2];
     
 
