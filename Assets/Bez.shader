@@ -37,7 +37,7 @@
                 return o;
             }
 
-            sampler2D _MainTex;
+            sampler2D _Wobbler;
             
             uniform float2 _B0;
             uniform float2 _B1;
@@ -54,7 +54,8 @@
 
             fixed4 frag (v2f inp) : SV_Target
             {
-                
+                float2 wob = tex2D(_Wobbler,inp.uv);
+                inp.uv+=wob*0.002;
                 fixed4 col = fixed4(0,0,0,1);
                 int2 tile = (int2)(inp.uv*float2(_Xtiles,_Ytiles));
 
@@ -69,13 +70,14 @@
                 for(int i=0; i<count; i++){
                     int ln_id = _Tiles[tile.x+tile.y*_Xtiles+i*(_Xtiles*_Ytiles)];
                     float4 ln = _Buffer[ln_id]-float4(off,off);
-                    mindist = min(get_line(ln.xy,float2(0,0),ln.zw),mindist);
-                    
+                    float x = get_line(ln.xy,float2(0,0),ln.zw);
+                    mindist = min(x,mindist);
+                    c+=(1-saturate(clamp(x-0.003,0,0.003)/0.003))*0.3;
                     
                 }
-                c = 1-saturate(clamp(mindist-0.003,0,0.003)/0.003);
+                //c = 1-saturate(clamp(mindist-0.002,0,0.003)/0.003);
                 col.r = c;//clamp(x,0,0.01)*100;//clamp((length(x)-0.001)*100,0,1);   
-                col.g = (float)count/_TileLines;   
+                //col.g = (float)count/_TileLines;   
                 return col;
             }
             ENDCG

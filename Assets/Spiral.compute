@@ -1,0 +1,27 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWStructuredBuffer<float4> outbuf;
+int numLines;
+float time;
+
+
+
+float2 spiralPnt(float t){
+    float dst = t;
+    float thet = t*3.14159*10/sin(time);
+    return float2(cos(thet+sin(time)*0.1)*dst,sin(thet)*dst);
+}
+
+
+[numthreads(100,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float2 p1 = spiralPnt(id.x/(float)numLines);
+    float2 p2 = spiralPnt((id.x+1)/(float)numLines);
+    
+
+    outbuf[id.x] = float4(p1.x,p1.y, p2.x,p2.y);
+}

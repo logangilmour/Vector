@@ -5,14 +5,15 @@ using UnityEngine;
 public class Tiler : MonoBehaviour
 {
     public ComputeShader shader;
+    public ComputeShader spiral;
     ComputeBuffer[] tiles = new ComputeBuffer[2];
     ComputeBuffer[] counts = new ComputeBuffer[2];
     ComputeBuffer buffer;
     ComputeBuffer index;
     Vector4[] data;
     int[] tileSize = {128,16 };
-    int numLines = 10000;
-    int[] tileLines = { 10000, 1000 };
+    int numLines = 1000;
+    int[] tileLines = { 1000, 100 };
     int[] kernels = new int[2];
     
 
@@ -26,41 +27,48 @@ public class Tiler : MonoBehaviour
         }
 
         mat = new Material(Shader.Find("Hidden/Bez"));
+
+        wob = new Material(Shader.Find("Hidden/Wobble"));
+
+        buffer = new ComputeBuffer(numLines, 4 * 4);
+
+
+        //buffer.SetData(data);
+
+        int[] indexList = new int[numLines];
+        for (int i = 0; i < numLines; i++)
+        {
+            indexList[i] = i;
+        }
+        index = new ComputeBuffer(numLines, 4);
+        index.SetData(indexList);
+        kernels[0] = shader.FindKernel("Run8");
+        kernels[1] = shader.FindKernel("Run16");
+    }
+
+    private void OnDestroy()
+    {
+        for (int i=0; i<2; i++)
+        {
+            tiles[i].Release();
+            counts[i].Release();
+            buffer.Release();
+            index.Release();
+        }
     }
 
     private void OnPreRender()
     {
         
 
-        if (buffer == null)
-        {
-            data = new Vector4[numLines];
-            for (int i = 0; i < numLines; i++)
-            {
-                float dist = i / (float)numLines;
-                float theta = i / (float)numLines * 10*2*Mathf.PI;
-                Vector2 p1 = new Vector2(Mathf.Cos(theta) * dist, Mathf.Sin(theta) * dist);
-
-                dist = (i+1) / (float)numLines;
-                theta = (i+1) / (float)numLines * 10 * 2 * Mathf.PI;
-                Vector2 p2 = new Vector2(Mathf.Cos(theta) * dist, Mathf.Sin(theta) * dist);
-
-                data[i] = new Vector4(p1.x, p1.y, p2.x, p2.y);
-            }
-            buffer = new ComputeBuffer(data.Length, 4 * 4);
-            buffer.SetData(data);
-
-            int[] indexList = new int[numLines];
-            for (int i = 0; i < numLines; i++)
-            {
-                indexList[i] = i;
-            }
-            index = new ComputeBuffer(numLines, 4);
-            index.SetData(indexList);
-            kernels[0] = shader.FindKernel("Run8");
-            kernels[1] = shader.FindKernel("Run16");
-        }
+        spiral.SetBuffer(0, "outbuf", buffer);
+        uint xx, yy, zz;
+        spiral.GetKernelThreadGroupSizes(0, out xx, out yy, out zz);
+        spiral.SetFloat("time", Time.time);
+        spiral.SetInt("numLines", numLines);
+        spiral.Dispatch(0,numLines/(int)xx, 1, 1);
         
+
         ComputeBuffer filterCounts = new ComputeBuffer(1, 4);
         int[] fdat = { numLines };
         filterCounts.SetData(fdat);
@@ -87,7 +95,6 @@ public class Tiler : MonoBehaviour
 
             shader.SetInt("tileLines", tileLines[i]);
             shader.SetFloat("distCheck", Mathf.Sqrt(2) * tileSize[i] / Screen.width);
-            print(kernel);
             shader.SetBuffer(kernel, "tiles", tiles[i]);
             
             uint x, y, z;
@@ -98,6 +105,10 @@ public class Tiler : MonoBehaviour
 
             shader.Dispatch(kernel, Screen.width / (int)x / tileSize[i], Screen.height / (int)y / tileSize[i], 1);
 
+            if (i == 0)
+            {
+                filterCounts.Release();
+            }
             filterCounts = counts[i];
             filterTilesX = Screen.width / tileSize[i];
             filterTilesY = Screen.height / tileSize[i];
@@ -110,6 +121,7 @@ public class Tiler : MonoBehaviour
     }
 
     Material mat;
+    Material wob;
 
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
@@ -120,7 +132,16 @@ public class Tiler : MonoBehaviour
         Shader.SetGlobalBuffer("_Counts", counts[1]);
         Shader.SetGlobalInt("_Xtiles", (Screen.width / tileSize[1]));
         Shader.SetGlobalInt("_Ytiles", (Screen.height / tileSize[1]));
+        var temp = RenderTexture.GetTemporary(512, 512, 0, RenderTextureFormat.RG16);
+        Shader.SetGlobalFloat("_Wob", Random.value);
+        Graphics.Blit(source, temp,wob);
+
+        Shader.SetGlobalTexture("_Wobbler", temp);
+
+
         Graphics.Blit(source, destination, mat);
+
+        RenderTexture.ReleaseTemporary(temp);
     }
 
     /*
