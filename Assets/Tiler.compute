@@ -1,0 +1,49 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+#include "Assets/Tests.cginc"
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWStructuredBuffer<float4> tiles;
+RWStructuredBuffer<int> counts;
+StructuredBuffer<float4> lines;
+StructuredBuffer<int> filterCounts;
+int xtiles;
+int ytiles;
+int filterXtiles;
+int filterYtiles;
+int tileLines;
+float distCheck;
+
+
+[numthreads(16,16,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    
+    float2 pos = (id.xy+0.5)/float2(xtiles,ytiles)*2-1;
+    int2 filterTile = id.xy / int2(xtiles/filterXtiles,ytiles/filterYtiles);
+
+    int idx = id.x+id.y*xtiles;
+    int fidx = filterTile.x+filterTile.y*filterXtiles;
+    tiles[idx]=0;
+    int count = 0;
+    int numLines = filterCounts[fidx];
+    for(int i=0; i<numLines; i++)
+    {
+        float4 l = lines[fidx+i*filterXtiles*filterYtiles];
+
+        float4 ln = l-float4(pos,pos);
+        
+
+        tiles[idx+count*xtiles*ytiles]=l;
+
+        count += get_line(ln.xy,float2(0,0),ln.zw)<(distCheck*2);
+
+        if(count==tileLines){
+            break;
+        }
+
+    }
+    counts[idx]=count;
+
+    
+}
