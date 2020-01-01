@@ -1,4 +1,4 @@
-﻿Shader "Hidden/ToneMap"
+﻿Shader "Hidden/Feedback"
 {
     Properties
     {
@@ -38,30 +38,15 @@
             }
 
             sampler2D _MainTex;
-            sampler2D _Bloom;
-            sampler2D _Phosphorescence;
+            sampler2D _LastFrame;
             
 
-            fixed4 frag (v2f i) : SV_Target
+            float4 frag (v2f i) : SV_Target
             {
-                float exposure = 10;
-                const float gamma = 2.2;
-                float3 bloom = tex2D(_Bloom, i.uv).rgb;
                 float3 col = tex2D(_MainTex, i.uv).rgb;
-                float3 phos = tex2D(_Phosphorescence,i.uv).rgb;
-                //float3 last = tex2D(_LastFrame,i.uv).rgb;
-                col = pow(col,0.8);
-                float3 hdrColor=col+bloom+phos*0.25;
+                float3 last = tex2D(_LastFrame,i.uv).rgb;
                 
-                hdrColor = pow(hdrColor,0.7);
-                float over = dot(saturate(hdrColor-1),float3(1,1,1));
-
-                hdrColor+=over;
-
-                
-
-  
-                return fixed4(hdrColor*0.6f, 1.0);
+                return float4(lerp(col,last,0.7), 1.0);
             }
             ENDCG
         }

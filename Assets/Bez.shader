@@ -51,6 +51,9 @@
             uniform StructuredBuffer<int> _Tiles;
             uniform StructuredBuffer<float4> _Buffer;
             uniform StructuredBuffer<int> _Counts;
+            float rand(float2 co){
+                return frac(sin(dot(co.xy ,float2(12.9898,78.233))) * 43758.5453);
+            }
 
             float4 frag (v2f inp) : SV_Target
             {
@@ -76,7 +79,8 @@
                     
                 }
                 //c = 1-saturate(clamp(mindist-0.002,0,0.003)/0.003);
-                col.rgb = c*float3(0,13/255.,91/255.);//clamp(x,0,0.01)*100;//clamp((length(x)-0.001)*100,0,1);   
+                float noise = rand(inp.uv+_Time.z);
+                col.rgb = (c*0.5+c*(noise+1)*0.25)*float3(0,13/255.,91/255.);//clamp(x,0,0.01)*100;//clamp((length(x)-0.001)*100,0,1);   
                 //col.g = (float)count/_TileLines;   
                 return col;
             }

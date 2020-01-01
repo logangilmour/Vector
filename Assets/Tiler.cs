@@ -142,7 +142,7 @@ public class Tiler : MonoBehaviour
                 p.y = -p.y;
                 if (i >=2 && i<= 5)
                 {
-                    p.y *= Random.value*10*(Input.GetKey(KeyCode.UpArrow)?1:0);
+                    p.y *= Random.value*10*(Input.GetKey(KeyCode.UpArrow)?1:0.1f);
                 }
                 p -= Vector2.up*3;
                 p = p * 0.01f;
