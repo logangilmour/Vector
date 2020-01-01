@@ -35,6 +35,10 @@ public class Tiler : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        if (demo)
+        {
+            numLines = 1000;
+        }
         for(int i=0; i<2; i++)
         {
             tiles[i] = new ComputeBuffer((Screen.width / tileSize[i]) * (Screen.height / tileSize[i]) * tileLines[i], 4);
