@@ -52,7 +52,7 @@
                 sum += tex2D(_MainTex, i.uv + float2(hp.x, -hp.y))*2.;
                 sum += tex2D(_MainTex, i.uv + float2(0.0,-hp.y*2.0));
                 sum += tex2D(_MainTex, i.uv - hp)*2.;
-                return sum/12 + tex2D(_CurTex,i.uv)/4;
+                return sum/10 + tex2D(_CurTex,i.uv)/6;
             }
             ENDCG
         }
