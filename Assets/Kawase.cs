@@ -41,7 +41,7 @@ public class Kawase : MonoBehaviour
 
         
         
-        int levels = 7;
+        int levels = 6;
         int backTo = 1;
 
         RenderTexture[] pym = new RenderTexture[levels];

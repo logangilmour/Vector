@@ -43,7 +43,7 @@
 
             float4 frag (v2f i) : SV_Target
             {
-                float2 hp = _MainTex_TexelSize*0.5;
+                float2 hp = _MainTex_TexelSize;
                 float4 sum = tex2D(_MainTex,i.uv + float2(-hp.x*2.,0.));
                 sum += tex2D(_MainTex, i.uv + float2(-hp.x,hp.y))*2.;
                 sum += tex2D(_MainTex, i.uv + float2(0.0,hp.y*2.0));
@@ -52,7 +52,7 @@
                 sum += tex2D(_MainTex, i.uv + float2(hp.x, -hp.y))*2.;
                 sum += tex2D(_MainTex, i.uv + float2(0.0,-hp.y*2.0));
                 sum += tex2D(_MainTex, i.uv - hp)*2.;
-                return sum/10 + tex2D(_CurTex,i.uv)/6;
+                return sum/9 + tex2D(_CurTex,i.uv)/4;
             }
             ENDCG
         }

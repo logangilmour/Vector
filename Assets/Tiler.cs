@@ -70,7 +70,7 @@ public class Tiler : MonoBehaviour
             Vector2 newP = new Vector2((float)(i+1) / 20 * 2-1, oldP.y + Random.Range(-0.04f, 0.04f));
             data[i] = new Vector4(oldP.x, oldP.y, newP.x, newP.y);
             oldP = newP;
-            oldP.x += 0.005f;
+            //oldP.x += 0.005f;
         }
         for(int i=20; i<50; i++)
         {
@@ -147,6 +147,7 @@ public class Tiler : MonoBehaviour
                 if (i >=2 && i<= 5)
                 {
                     p.y *= Random.value*10*(Input.GetKey(KeyCode.UpArrow)?1:0.1f);
+                    p.x += Random.Range(-1,1) * 10 * (Input.GetKey(KeyCode.UpArrow) ? 0.05f : 0.005f);
                 }
                 p -= Vector2.up*3;
                 p = p * 0.01f;
