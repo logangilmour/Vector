@@ -8,9 +8,13 @@ public class Tiler : MonoBehaviour
     public ComputeShader spiral;
     ComputeBuffer[] tiles = new ComputeBuffer[2];
     ComputeBuffer[] counts = new ComputeBuffer[2];
-    ComputeBuffer buffer;
+    ComputeBuffer primitives;
+    ComputeBuffer vertices;
+
+    
     ComputeBuffer index;
-    Vector4[] data;
+    Vector2[] verts;
+    int[] linesData;
     int[] tileSize = {128,16 };
     const int reps = 2;
     
@@ -25,9 +29,12 @@ public class Tiler : MonoBehaviour
     Vector2 shipVel;
     Vector2 shipPos;
 
-    double[] shipPath = { -0.5, -1, 0,1,
-                           0,1, 0.5, -1,
-                           0.5, -1, -0.5, -1};
+    double[] shipVerts = {-0.5, -1,
+                            0,1,
+                            0.5, -1};
+
+    int[] shipLines = { 0, 1, 1, 2, 2, 0 };
+
 
 
     
@@ -37,7 +44,7 @@ public class Tiler : MonoBehaviour
     {
         if (demo)
         {
-            numLines = 1000;
+            numLines = 1000-1;
         }
         for(int i=0; i<2; i++)
         {
@@ -47,8 +54,10 @@ public class Tiler : MonoBehaviour
         mat = new Material(Shader.Find("Hidden/Bez"));
 
         wob = new Material(Shader.Find("Hidden/Wobble"));
+        int primSize = 2;
+        primitives = new ComputeBuffer(numLines*primSize,4);
 
-        buffer = new ComputeBuffer(numLines, 4 * 4);
+        vertices = new ComputeBuffer(numLines + 1, 4 * 2);
 
 
         //buffer.SetData(data);
@@ -58,29 +67,40 @@ public class Tiler : MonoBehaviour
         {
             indexList[i] = i;
         }
+
         index = new ComputeBuffer(numLines, 4);
         index.SetData(indexList);
         kernels[0] = shader.FindKernel("Run8");
         kernels[1] = shader.FindKernel("Run16");
 
-        data = new Vector4[numLines];
+        verts = new Vector2[numLines+1];
+        linesData = new int[numLines * primSize];
         Vector2 oldP = new Vector2(-1, -0.5f);
-        for(int i=0; i<20; i++)
+        verts[0] = oldP;
+
+        for(int i=1; i<20; i++)
         {
-            Vector2 newP = new Vector2((float)(i+1) / 20 * 2-1, oldP.y + Random.Range(-0.04f, 0.04f));
-            data[i] = new Vector4(oldP.x, oldP.y, newP.x, newP.y);
-            oldP = newP;
-            //oldP.x += 0.005f;
+            linesData[(i-1) * 2] = i - 1;
+            linesData[(i-1) * 2 + 1] = i;
+            verts[i] = new Vector2((float)i / 20 * 2 - 1, oldP.y + Random.Range(-0.04f, 0.04f));
         }
         for(int i=20; i<50; i++)
         {
             Vector2 p = new Vector2(Random.Range(-1f, 1), Random.Range(-0.5f, 1));
-            data[i] = new Vector4(p.x, p.y, p.x, p.y);
-            if (i < 30)
+            verts[i] = new Vector2(p.x, p.y);
+            linesData[i * 2] = i;
+            linesData[i * 2 + 1] = i;
+        }
+
+        if (demo)
+        {
+            for(int i=0; i<linesData.Length/2; i++)
             {
-                i++;
-                data[i] = new Vector4(p.x, p.y, p.x, p.y);
+                linesData[i * 2] = i;
+                linesData[i * 2 + 1] = i + 1;
             }
+            primitives.SetData(linesData);
+            
         }
     }
 
@@ -90,7 +110,8 @@ public class Tiler : MonoBehaviour
         {
             tiles[i].Release();
             counts[i].Release();
-            buffer.Release();
+            primitives.Release();
+            vertices.Release();
             index.Release();
         }
     }
@@ -101,20 +122,20 @@ public class Tiler : MonoBehaviour
         {
 
 
-            spiral.SetBuffer(0, "outbuf", buffer);
+            spiral.SetBuffer(0, "outbuf", vertices);
             uint xx, yy, zz;
             spiral.GetKernelThreadGroupSizes(0, out xx, out yy, out zz);
             spiral.SetFloat("time", Time.time);
-            spiral.SetInt("numLines", numLines);
-            spiral.Dispatch(0, numLines / (int)xx, 1, 1);
+            spiral.SetInt("numLines", numLines+1);
+            spiral.Dispatch(0, (numLines+1) / (int)xx, 1, 1);
 
         }
         else
         {
-
-            for(int i=0; i<shipPath.Length; i+=2)
+            
+            for(int i=0; i<shipVerts.Length; i+=2)
             {
-                Vector2 p = new Vector2((float)shipPath[i], (float)shipPath[i + 1]);
+                Vector2 p = new Vector2((float)shipVerts[i], (float)shipVerts[i + 1]);
                 p += Vector2.up * 0.5f;
                 p = p * 0.04f;
                 
@@ -122,31 +143,22 @@ public class Tiler : MonoBehaviour
 
                 p += shipPos;
 
-                for (int j = 0; j < reps; j++)
-                {
-                    if (i % 4 == 0)
-                    {
-                        data[i / 4 + 50+j*shipPath.Length/4].x = p.x;
-                        data[i / 4 + 50+j*shipPath.Length/4].y = p.y;
-                    }
-                    else
-                    {
-                        data[i / 4 + 50 + j * shipPath.Length / 4].z = p.x;
-                        data[i / 4 + 50 + j * shipPath.Length / 4].w = p.y;
-                    }
-                }
+                verts[i / 2 + 50] = p;
+
             }
-            for (int i = 0; i < shipPath.Length-4; i += 2)
+            for(int i=0; i<shipLines.Length; i+=2)
             {
-                if(i==1 || i == 2)
-                {
-                    
-                }
-                Vector2 p = new Vector2((float)shipPath[i], (float)shipPath[i + 1]);
+                linesData[50*2+i] = 50 + shipLines[i];
+                linesData[50*2+i+1] = 50 + shipLines[i+1];
+            }
+            
+            for (int i = 0; i < shipVerts.Length; i += 2)
+            {
+                Vector2 p = new Vector2((float)shipVerts[i], (float)shipVerts[i + 1]);
                 p.y = -p.y;
-                if (i >=2 && i<= 5)
+                if (i == 2)
                 {
-                    p.y *= Random.value*10*(Input.GetKey(KeyCode.UpArrow)?1:0.1f);
+                    p.y *= Random.Range(5,10)*(Input.GetKey(KeyCode.UpArrow)?1:0.1f);
                     p.x += Random.Range(-1,1) * 10 * (Input.GetKey(KeyCode.UpArrow) ? 0.05f : 0.005f);
                 }
                 p -= Vector2.up*3;
@@ -154,21 +166,21 @@ public class Tiler : MonoBehaviour
 
                 p = p.x * new Vector2(Mathf.Cos(rotation), Mathf.Sin(rotation)) + p.y * new Vector2(-Mathf.Sin(rotation), Mathf.Cos(rotation));
                 p += shipPos;
-                for (int j = 0; j < reps*2; j++)
+
+                verts[i / 2 + 50 + shipVerts.Length / 2] = p;
+            }
+            for (int i = 0; i < shipLines.Length; i += 2)
+            {
+                for (int j = 0; j < 6; j++)
                 {
-                    if (i % 4 == 0)
-                    {
-                        data[i / 4 + 50 + reps*shipPath.Length / 4 + j * shipPath.Length / 4].x = p.x;
-                        data[i / 4 + 50 + reps*shipPath.Length / 4 + j * shipPath.Length / 4].y = p.y;
-                    }
-                    else
-                    {
-                        data[i / 4 + 50 + reps*shipPath.Length / 4 + j * shipPath.Length / 4].z = p.x;
-                        data[i / 4 + 50 + reps*shipPath.Length / 4 + j * shipPath.Length / 4].w = p.y;
-                    }
+                    linesData[50 * 2 + shipLines.Length +j*shipLines.Length + i] = 50 + shipVerts.Length / 2 + shipLines[i];
+                    linesData[50 * 2 + shipLines.Length + j * shipLines.Length + i + 1] = 50 + shipVerts.Length / 2 + shipLines[i + 1];
                 }
             }
-            buffer.SetData(data);
+
+            primitives.SetData(linesData);
+            vertices.SetData(verts);
+
         }
         
 
@@ -176,7 +188,7 @@ public class Tiler : MonoBehaviour
         int[] fdat = { numLines };
         filterCounts.SetData(fdat);
 
-        ComputeBuffer lines = index;
+        ComputeBuffer primIds = index;
         int filterTilesX = 1;
         int filterTilesY = 1;
         for (int i =0; i<2; i++)
@@ -186,8 +198,9 @@ public class Tiler : MonoBehaviour
             int kernel = kernels[i];
             shader.SetBuffer(kernel, "filterCounts", filterCounts);
 
-            shader.SetBuffer(kernel, "buffer", buffer);
-            shader.SetBuffer(kernel, "lines", lines);
+            shader.SetBuffer(kernel, "buffer", primitives);
+            shader.SetBuffer(kernel, "vertices", vertices);
+            shader.SetBuffer(kernel, "lines", primIds);
             shader.SetBuffer(kernel, "counts", counts[i]);
 
             shader.SetInt("filterXtiles", filterTilesX);
@@ -215,7 +228,7 @@ public class Tiler : MonoBehaviour
             filterCounts = counts[i];
             filterTilesX = Screen.width / tileSize[i];
             filterTilesY = Screen.height / tileSize[i];
-            lines = tiles[i];
+            primIds = tiles[i];
 
         }
 
@@ -230,7 +243,8 @@ public class Tiler : MonoBehaviour
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         Shader.SetGlobalBuffer("_Tiles", tiles[1]);
-        Shader.SetGlobalBuffer("_Buffer", buffer);
+        Shader.SetGlobalBuffer("_Vertices", vertices);
+        Shader.SetGlobalBuffer("_Buffer", primitives);
         Shader.SetGlobalInt("_TileLines", tileLines[1]);
         Shader.SetGlobalBuffer("_Counts", counts[1]);
         Shader.SetGlobalInt("_Xtiles", (Screen.width / tileSize[1]));

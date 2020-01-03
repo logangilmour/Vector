@@ -7,7 +7,8 @@
 RWStructuredBuffer<int> tiles;
 RWStructuredBuffer<int> counts;
 StructuredBuffer<int> lines;
-StructuredBuffer<float4> buffer;
+StructuredBuffer<float2> vertices;
+StructuredBuffer<int> buffer;
 StructuredBuffer<int> filterCounts;
 int xtiles;
 int ytiles;
@@ -29,8 +30,8 @@ void run(uint3 id)
     for(int i=0; i<numLines; i++)
     {
         int ln_id = lines[fidx+i*filterXtiles*filterYtiles];
-
-        float4 ln = buffer[ln_id]-float4(pos,pos);
+        
+        float4 ln = float4(vertices[buffer[ln_id*2]],vertices[buffer[ln_id*2+1]])-float4(pos,pos);
         
 
         tiles[idx+count*xtiles*ytiles]=ln_id;

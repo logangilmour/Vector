@@ -49,7 +49,8 @@
             int _Ytiles;
             
             uniform StructuredBuffer<int> _Tiles;
-            uniform StructuredBuffer<float4> _Buffer;
+            uniform StructuredBuffer<int> _Buffer;
+            uniform StructuredBuffer<float2> _Vertices;
             uniform StructuredBuffer<int> _Counts;
             float rand(float2 co){
                 return frac(sin(dot(co.xy ,float2(12.9898,78.233))) * 43758.5453);
@@ -72,7 +73,7 @@
                 float mindist = 1000;
                 for(int i=0; i<count; i++){
                     int ln_id = _Tiles[tile.x+tile.y*_Xtiles+i*(_Xtiles*_Ytiles)];
-                    float4 ln = _Buffer[ln_id]-float4(off,off);
+                    float4 ln = float4(_Vertices[_Buffer[ln_id*2]],_Vertices[_Buffer[ln_id*2+1]])-float4(off,off);
                     float x = get_line(ln.xy,float2(0,0),ln.zw);
                     mindist = min(x,mindist);
                     c+=(1-saturate(clamp(x-0.001,0,0.003)/0.003))*6;

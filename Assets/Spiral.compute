@@ -3,7 +3,7 @@
 
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
-RWStructuredBuffer<float4> outbuf;
+RWStructuredBuffer<float2> outbuf;
 int numLines;
 float time;
 
@@ -20,8 +20,5 @@ float2 spiralPnt(float t){
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     float2 p1 = spiralPnt(id.x/(float)numLines);
-    float2 p2 = spiralPnt((id.x+1)/(float)numLines);
-    
-
-    outbuf[id.x] = float4(p1.x,p1.y, p2.x,p2.y);
+    outbuf[id.x] = float2(p1.x,p1.y);
 }
