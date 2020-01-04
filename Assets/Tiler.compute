@@ -10,16 +10,15 @@ StructuredBuffer<int> lines;
 StructuredBuffer<float2> vertices;
 StructuredBuffer<int> buffer;
 StructuredBuffer<int> filterCounts;
-int xtiles;
-int ytiles;
-int filterXtiles;
-int filterYtiles;
-int tileLines;
+uint xtiles;
+uint ytiles;
+uint filterXtiles;
+uint filterYtiles;
 float distCheck;
 
 void run(uint3 id)
 {
-    float2 pos = (id.xy+0.5)/float2(xtiles,ytiles)*2-1;
+    float2 off = (id.xy+0.5)/float2(xtiles,ytiles)*2-1;
     int2 filterTile = id.xy / int2(xtiles/filterXtiles,ytiles/filterYtiles);
 
     int idx = id.x+id.y*xtiles;
@@ -31,16 +30,11 @@ void run(uint3 id)
     {
         int ln_id = lines[fidx+i*filterXtiles*filterYtiles];
         
-        float4 ln = float4(vertices[buffer[ln_id*2]],vertices[buffer[ln_id*2+1]])-float4(pos,pos);
-        
+        float dist = get_distance_vector(vertices[buffer[ln_id*3]]+off,vertices[buffer[ln_id*3+1]]+off,vertices[buffer[ln_id*3+2]]+off);
 
         tiles[idx+count*xtiles*ytiles]=ln_id;
 
-        count += get_line(ln.xy,float2(0,0),ln.zw)<(distCheck*2);
-
-        if(count==tileLines){
-            break;
-        }
+        count += dist<(distCheck*2);
 
     }
     counts[idx]=count;

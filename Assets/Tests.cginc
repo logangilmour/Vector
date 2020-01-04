@@ -17,8 +17,11 @@ float2 get_distance_vector(float2 b0, float2 b1, float2 b2)
     
     // (note that 2*ap+bp+dp=2*a+b+d=4*area(b0,b1,b2))
     float t=clamp((ap+bp)/(2*a+b+d), 0,1);
-    
-    return lerp(lerp(b0,b1,t),lerp(b1,b2,t),t);
+
+
+    float2 dvec = lerp(lerp(b0,b1,t),lerp(b1,b2,t),t);
+
+    return length(dvec);
 
 } 
 

@@ -73,8 +73,7 @@
                 float mindist = 1000;
                 for(int i=0; i<count; i++){
                     int ln_id = _Tiles[tile.x+tile.y*_Xtiles+i*(_Xtiles*_Ytiles)];
-                    float4 ln = float4(_Vertices[_Buffer[ln_id*2]],_Vertices[_Buffer[ln_id*2+1]])-float4(off,off);
-                    float x = get_line(ln.xy,float2(0,0),ln.zw);
+                    float x = get_distance_vector(_Vertices[_Buffer[ln_id*3]]+off,_Vertices[_Buffer[ln_id*3+1]]+off,_Vertices[_Buffer[ln_id*3+2]]+off);
                     mindist = min(x,mindist);
                     c+=(1-saturate(clamp(x-0.001,0,0.003)/0.003))*6;
                     
@@ -82,7 +81,7 @@
                 //c = 1-saturate(clamp(mindist-0.002,0,0.003)/0.003);
                 float noise = rand(inp.uv+_Time.z);
                 col.rgb = (c*0.5+c*(noise+1)*0.25)*float3(0,13/255.,91/255.);//clamp(x,0,0.01)*100;//clamp((length(x)-0.001)*100,0,1);   
-                //col.r = (float)count/_TileLines;   
+                col.r = (float)count/_TileLines;   
                 return col;
             }
             ENDCG
