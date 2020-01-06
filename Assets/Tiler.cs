@@ -106,6 +106,14 @@ public class Tiler : MonoBehaviour
         
 
         primitives.SetData(linesData);
+        for(int i=0; i<verts.Length; i++)
+        {
+            verts[i] += Vector2.left * (Input.GetKey(KeyCode.LeftArrow)?Time.deltaTime*0.1f:0);
+            verts[i] += Vector2.right * (Input.GetKey(KeyCode.RightArrow) ? Time.deltaTime*0.1f : 0);
+            verts[i] += Vector2.up * (Input.GetKey(KeyCode.UpArrow) ? Time.deltaTime * 0.1f : 0);
+            verts[i] += Vector2.down * (Input.GetKey(KeyCode.DownArrow) ? Time.deltaTime * 0.1f : 0);
+
+        }
         vertices.SetData(verts);
 
         
